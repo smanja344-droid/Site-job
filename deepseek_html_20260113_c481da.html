@@ -1,0 +1,1674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SITE SHIFT - Construction Job Matching</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-messaging-compat.js"></script>
+    <style>
+        /* Reset and Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        :root {
+            --primary: #2E7D32;
+            --primary-dark: #1B5E20;
+            --secondary: #FF9800;
+            --light: #F5F5F5;
+            --dark: #333333;
+            --gray: #757575;
+            --danger: #D32F2F;
+            --success: #388E3C;
+            --warning: #F57C00;
+            --radius: 12px;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        body {
+            background-color: #f8f9fa;
+            color: var(--dark);
+            line-height: 1.6;
+            min-height: 100vh;
+            padding-bottom: 80px; /* For bottom nav */
+        }
+        
+        .container {
+            max-width: 100%;
+            padding: 0 16px;
+            margin: 0 auto;
+        }
+        
+        /* Typography */
+        h1, h2, h3, h4 {
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+        
+        h1 {
+            font-size: 28px;
+            color: var(--primary);
+        }
+        
+        h2 {
+            font-size: 24px;
+        }
+        
+        h3 {
+            font-size: 20px;
+        }
+        
+        p {
+            margin-bottom: 16px;
+        }
+        
+        /* Buttons */
+        .btn {
+            display: inline-block;
+            padding: 16px 24px;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: var(--radius);
+            font-size: 18px;
+            font-weight: 600;
+            text-align: center;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-bottom: 12px;
+            box-shadow: var(--shadow);
+        }
+        
+        .btn:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+        
+        .btn-secondary {
+            background-color: var(--secondary);
+        }
+        
+        .btn-secondary:hover {
+            background-color: #EF6C00;
+        }
+        
+        .btn-outline {
+            background-color: transparent;
+            color: var(--primary);
+            border: 2px solid var(--primary);
+        }
+        
+        .btn-outline:hover {
+            background-color: rgba(46, 125, 50, 0.1);
+        }
+        
+        .btn-small {
+            padding: 10px 16px;
+            font-size: 16px;
+        }
+        
+        .btn-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        /* Cards */
+        .card {
+            background-color: white;
+            border-radius: var(--radius);
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow);
+        }
+        
+        .job-card, .worker-card {
+            border-left: 6px solid var(--primary);
+        }
+        
+        .job-card.highlight {
+            border-left-color: var(--secondary);
+        }
+        
+        /* Navigation */
+        .top-nav {
+            background-color: var(--primary);
+            color: white;
+            padding: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+            font-size: 20px;
+        }
+        
+        .logo i {
+            font-size: 24px;
+        }
+        
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: white;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: white;
+            display: flex;
+            justify-content: space-around;
+            padding: 12px 0;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+            z-index: 100;
+        }
+        
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: var(--gray);
+            text-decoration: none;
+            font-size: 14px;
+            flex: 1;
+        }
+        
+        .nav-item.active {
+            color: var(--primary);
+        }
+        
+        .nav-icon {
+            font-size: 22px;
+            margin-bottom: 4px;
+        }
+        
+        /* Forms */
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--dark);
+        }
+        
+        .input-with-icon {
+            position: relative;
+        }
+        
+        .input-with-icon i {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gray);
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 16px 16px 16px 48px;
+            border: 2px solid #e0e0e0;
+            border-radius: var(--radius);
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        
+        /* Skill Icons */
+        .skill-icons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin: 16px 0;
+        }
+        
+        .skill-icon {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: var(--radius);
+            width: 80px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .skill-icon.selected {
+            border-color: var(--primary);
+            background-color: rgba(46, 125, 50, 0.1);
+        }
+        
+        .skill-icon i {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+        
+        /* Availability Toggle */
+        .availability-toggle {
+            display: flex;
+            background-color: #e0e0e0;
+            border-radius: 50px;
+            padding: 4px;
+            margin: 20px 0;
+        }
+        
+        .toggle-option {
+            flex: 1;
+            padding: 16px;
+            text-align: center;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .toggle-option.active {
+            background-color: var(--success);
+            color: white;
+        }
+        
+        /* Job Listings */
+        .job-list, .worker-list {
+            margin-top: 20px;
+        }
+        
+        .job-meta, .worker-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin: 12px 0;
+            color: var(--gray);
+        }
+        
+        .job-meta span, .worker-meta span {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .wage-badge {
+            background-color: var(--secondary);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+            display: inline-block;
+            margin-top: 8px;
+        }
+        
+        /* Dashboard */
+        .stats-cards {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            margin: 20px 0;
+        }
+        
+        .stat-card {
+            background-color: white;
+            border-radius: var(--radius);
+            padding: 20px;
+            text-align: center;
+            box-shadow: var(--shadow);
+        }
+        
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--primary);
+            margin: 8px 0;
+        }
+        
+        .stat-label {
+            color: var(--gray);
+            font-size: 14px;
+        }
+        
+        /* Attendance */
+        .attendance-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 8px;
+            margin: 20px 0;
+        }
+        
+        .attendance-day {
+            background-color: white;
+            border-radius: 8px;
+            padding: 12px 4px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .attendance-day.present {
+            background-color: var(--success);
+            color: white;
+        }
+        
+        .attendance-day.absent {
+            background-color: var(--danger);
+            color: white;
+        }
+        
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+        
+        .modal.active {
+            display: flex;
+        }
+        
+        .modal-content {
+            background-color: white;
+            border-radius: var(--radius);
+            width: 100%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 24px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--gray);
+        }
+        
+        /* Tabs */
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid #e0e0e0;
+            margin-bottom: 20px;
+        }
+        
+        .tab {
+            padding: 12px 20px;
+            cursor: pointer;
+            font-weight: 600;
+            color: var(--gray);
+            border-bottom: 2px solid transparent;
+            margin-bottom: -2px;
+        }
+        
+        .tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+        
+        /* Utility Classes */
+        .text-center {
+            text-align: center;
+        }
+        
+        .text-success {
+            color: var(--success);
+        }
+        
+        .text-danger {
+            color: var(--danger);
+        }
+        
+        .mb-0 {
+            margin-bottom: 0;
+        }
+        
+        .mt-20 {
+            margin-top: 20px;
+        }
+        
+        .mt-30 {
+            margin-top: 30px;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        /* Loading Spinner */
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top: 4px solid var(--primary);
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 40px auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Responsive */
+        @media (min-width: 768px) {
+            .container {
+                max-width: 720px;
+            }
+            
+            .btn {
+                width: auto;
+            }
+            
+            .stats-cards {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Authentication Screen -->
+    <div id="auth-screen" class="container">
+        <div class="top-nav">
+            <div class="logo">
+                <i class="fas fa-hard-hat"></i>
+                <span>SITE SHIFT</span>
+            </div>
+        </div>
+        
+        <div class="card" style="margin-top: 40px;">
+            <h1 class="text-center">Welcome to SITE SHIFT</h1>
+            <p class="text-center">Find construction jobs or hire workers with one tap</p>
+            
+            <div id="role-selection" class="mt-30">
+                <h3 class="text-center">I am a:</h3>
+                <button id="worker-btn" class="btn btn-icon">
+                    <i class="fas fa-user-hard-hat"></i> Construction Worker
+                </button>
+                <button id="contractor-btn" class="btn btn-secondary btn-icon">
+                    <i class="fas fa-user-tie"></i> Contractor / Employer
+                </button>
+            </div>
+            
+            <div id="auth-forms" class="hidden">
+                <div class="tabs">
+                    <div class="tab active" id="login-tab">Login</div>
+                    <div class="tab" id="register-tab">Register</div>
+                </div>
+                
+                <form id="login-form">
+                    <div class="form-group">
+                        <div class="input-with-icon">
+                            <i class="fas fa-phone"></i>
+                            <input type="tel" id="login-phone" placeholder="Phone Number" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <div class="input-with-icon">
+                            <i class="fas fa-lock"></i>
+                            <input type="password" id="login-password" placeholder="Password" required>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn">Login</button>
+                </form>
+                
+                <form id="register-form" class="hidden">
+                    <div class="form-group">
+                        <div class="input-with-icon">
+                            <i class="fas fa-user"></i>
+                            <input type="text" id="register-name" placeholder="Full Name" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <div class="input-with-icon">
+                            <i class="fas fa-phone"></i>
+                            <input type="tel" id="register-phone" placeholder="Phone Number" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <div class="input-with-icon">
+                            <i class="fas fa-lock"></i>
+                            <input type="password" id="register-password" placeholder="Password (min. 6 characters)" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group" id="location-group">
+                        <label>Location</label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-map-marker-alt"></i>
+                            <input type="text" id="register-location" placeholder="City / Area" required>
+                        </div>
+                        <button type="button" id="detect-location" class="btn btn-outline btn-small mt-20">
+                            <i class="fas fa-location-crosshairs"></i> Detect My Location
+                        </button>
+                    </div>
+                    
+                    <div class="form-group" id="skills-group">
+                        <label>Select Your Skills</label>
+                        <div class="skill-icons">
+                            <div class="skill-icon" data-skill="mason">
+                                <i class="fas fa-brick"></i>
+                                <span>Mason</span>
+                            </div>
+                            <div class="skill-icon" data-skill="carpenter">
+                                <i class="fas fa-hammer"></i>
+                                <span>Carpenter</span>
+                            </div>
+                            <div class="skill-icon" data-skill="electrician">
+                                <i class="fas fa-bolt"></i>
+                                <span>Electrician</span>
+                            </div>
+                            <div class="skill-icon" data-skill="plumber">
+                                <i class="fas fa-wrench"></i>
+                                <span>Plumber</span>
+                            </div>
+                            <div class="skill-icon" data-skill="helper">
+                                <i class="fas fa-people-carry"></i>
+                                <span>Helper</span>
+                            </div>
+                            <div class="skill-icon" data-skill="painter">
+                                <i class="fas fa-paint-roller"></i>
+                                <span>Painter</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn">Create Account</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Main App (hidden initially) -->
+    <div id="app-container" class="hidden">
+        <!-- Top Navigation -->
+        <div class="top-nav">
+            <div class="logo">
+                <i class="fas fa-hard-hat"></i>
+                <span>SITE SHIFT</span>
+            </div>
+            <div class="user-avatar" id="user-menu-btn">
+                JS
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="container">
+            <!-- Worker Dashboard -->
+            <div id="worker-dashboard" class="hidden">
+                <div class="card">
+                    <h2>My Dashboard</h2>
+                    
+                    <div class="availability-toggle">
+                        <div class="toggle-option active" id="available-toggle">Available Now</div>
+                        <div class="toggle-option" id="unavailable-toggle">Unavailable</div>
+                    </div>
+                    
+                    <div class="stats-cards">
+                        <div class="stat-card">
+                            <div class="stat-value" id="jobs-today">0</div>
+                            <div class="stat-label">Jobs Today</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="earnings-week">₹0</div>
+                            <div class="stat-label">This Week</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="total-jobs">0</div>
+                            <div class="stat-label">Total Jobs</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="rating">4.5</div>
+                            <div class="stat-label">My Rating</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <h3>Available Jobs Nearby</h3>
+                <div id="worker-job-list" class="job-list">
+                    <!-- Job cards will be inserted here -->
+                    <div class="job-card">
+                        <h3>Mason needed for residential building</h3>
+                        <div class="job-meta">
+                            <span><i class="fas fa-map-marker-alt"></i> 2 km away</span>
+                            <span><i class="fas fa-clock"></i> 8 hours</span>
+                            <span><i class="fas fa-calendar"></i> Today</span>
+                        </div>
+                        <div class="wage-badge">₹800/day</div>
+                        <button class="btn btn-small mt-20">Apply Now</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Contractor Dashboard -->
+            <div id="contractor-dashboard" class="hidden">
+                <div class="card">
+                    <h2>Contractor Dashboard</h2>
+                    
+                    <div class="stats-cards">
+                        <div class="stat-card">
+                            <div class="stat-value" id="active-jobs">0</div>
+                            <div class="stat-label">Active Jobs</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="hired-workers">0</div>
+                            <div class="stat-label">Hired Workers</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="total-spent">₹0</div>
+                            <div class="stat-label">Total Spent</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="avg-rating">4.2</div>
+                            <div class="stat-label">Avg. Rating</div>
+                        </div>
+                    </div>
+                    
+                    <button id="post-job-btn" class="btn mt-20">
+                        <i class="fas fa-plus"></i> Post New Job
+                    </button>
+                </div>
+                
+                <h3>Available Workers Nearby</h3>
+                <div id="contractor-worker-list" class="worker-list">
+                    <!-- Worker cards will be inserted here -->
+                    <div class="worker-card card">
+                        <h3>John Mason</h3>
+                        <div class="worker-meta">
+                            <span><i class="fas fa-brick"></i> Mason</span>
+                            <span><i class="fas fa-map-marker-alt"></i> 1.5 km away</span>
+                            <span><i class="fas fa-star"></i> 4.7/5</span>
+                        </div>
+                        <div class="wage-badge">₹800/day</div>
+                        <div class="availability-toggle mt-20">
+                            <div class="toggle-option active">Available Now</div>
+                        </div>
+                        <button class="btn btn-small mt-20">Hire Now</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Jobs Screen -->
+            <div id="jobs-screen" class="hidden">
+                <h2>Job Listings</h2>
+                <div class="job-list" id="all-job-list">
+                    <!-- All job cards will be inserted here -->
+                </div>
+            </div>
+            
+            <!-- Profile Screen -->
+            <div id="profile-screen" class="hidden">
+                <div class="card">
+                    <div class="text-center">
+                        <div class="user-avatar" style="width: 80px; height: 80px; margin: 0 auto 20px; font-size: 32px;">
+                            JS
+                        </div>
+                        <h2 id="profile-name">John Smith</h2>
+                        <p id="profile-role">Construction Worker</p>
+                        <p id="profile-location"><i class="fas fa-map-marker-alt"></i> Mumbai, India</p>
+                    </div>
+                    
+                    <div class="mt-30">
+                        <h3>My Skills</h3>
+                        <div class="skill-icons" id="profile-skills">
+                            <!-- Skills will be inserted here -->
+                        </div>
+                    </div>
+                    
+                    <div class="mt-30">
+                        <h3>This Week's Attendance</h3>
+                        <div class="attendance-grid" id="attendance-grid">
+                            <!-- Attendance will be inserted here -->
+                        </div>
+                    </div>
+                    
+                    <div class="mt-30">
+                        <h3>Recent Earnings</h3>
+                        <div class="card">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
+                                <span>Today</span>
+                                <span class="text-success">₹800</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
+                                <span>This Week</span>
+                                <span class="text-success">₹4,200</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between;">
+                                <span>Total</span>
+                                <span class="text-success">₹24,500</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button id="logout-btn" class="btn btn-outline mt-30">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Bottom Navigation -->
+        <div class="bottom-nav">
+            <a href="#" class="nav-item active" data-screen="dashboard">
+                <i class="fas fa-home nav-icon"></i>
+                <span>Home</span>
+            </a>
+            <a href="#" class="nav-item" data-screen="jobs">
+                <i class="fas fa-briefcase nav-icon"></i>
+                <span>Jobs</span>
+            </a>
+            <a href="#" class="nav-item" data-screen="profile">
+                <i class="fas fa-user nav-icon"></i>
+                <span>Profile</span>
+            </a>
+        </div>
+    </div>
+    
+    <!-- Modals -->
+    <!-- Post Job Modal -->
+    <div id="post-job-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Post New Job</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            
+            <form id="post-job-form">
+                <div class="form-group">
+                    <label>Job Title</label>
+                    <input type="text" id="job-title" placeholder="e.g., Mason needed for wall construction" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Required Skills</label>
+                    <div class="skill-icons" id="job-skills-selector">
+                        <!-- Skills will be inserted here -->
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Number of Workers Needed</label>
+                    <input type="number" id="workers-needed" min="1" max="50" value="1" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Shift Timing</label>
+                    <div style="display: flex; gap: 12px;">
+                        <input type="time" id="shift-start" value="09:00" required>
+                        <span>to</span>
+                        <input type="time" id="shift-end" value="17:00" required>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Job Duration (days)</label>
+                    <input type="number" id="job-duration" min="1" max="365" value="1" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Daily Wage (₹)</label>
+                    <input type="number" id="daily-wage" min="500" max="5000" value="800" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Location</label>
+                    <input type="text" id="job-location" placeholder="Site address" required>
+                </div>
+                
+                <button type="submit" class="btn">Post Job</button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Job Details Modal -->
+    <div id="job-details-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-job-title">Job Title</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            
+            <div id="modal-job-content">
+                <!-- Job details will be inserted here -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- User Menu Modal -->
+    <div id="user-menu-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Account</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            
+            <div style="text-align: center; margin-bottom: 20px;">
+                <div class="user-avatar" style="width: 60px; height: 60px; margin: 0 auto 12px; font-size: 24px;">
+                    JS
+                </div>
+                <h4 id="menu-user-name">John Smith</h4>
+                <p id="menu-user-role">Worker</p>
+            </div>
+            
+            <button id="switch-role-btn" class="btn btn-outline mb-0">
+                <i class="fas fa-exchange-alt"></i> Switch Role
+            </button>
+        </div>
+    </div>
+
+    <!-- Firebase Configuration and App Logic -->
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCw8Gv2Ql4L7z7q4Xq4QwV4XwV4XwV4XwV4",
+            authDomain: "site-shift-demo.firebaseapp.com",
+            projectId: "site-shift-demo",
+            storageBucket: "site-shift-demo.appspot.com",
+            messagingSenderId: "123456789012",
+            appId: "1:123456789012:web:abcdef1234567890abcdef"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+        const storage = firebase.storage();
+        
+        // App State
+        let currentUser = null;
+        let userRole = 'worker'; // 'worker' or 'contractor'
+        let userProfile = null;
+        let selectedSkills = [];
+        
+        // DOM Elements
+        const authScreen = document.getElementById('auth-screen');
+        const appContainer = document.getElementById('app-container');
+        const roleSelection = document.getElementById('role-selection');
+        const authForms = document.getElementById('auth-forms');
+        const loginForm = document.getElementById('login-form');
+        const registerForm = document.getElementById('register-form');
+        const loginTab = document.getElementById('login-tab');
+        const registerTab = document.getElementById('register-tab');
+        const workerBtn = document.getElementById('worker-btn');
+        const contractorBtn = document.getElementById('contractor-btn');
+        const detectLocationBtn = document.getElementById('detect-location');
+        
+        // Main app sections
+        const workerDashboard = document.getElementById('worker-dashboard');
+        const contractorDashboard = document.getElementById('contractor-dashboard');
+        const jobsScreen = document.getElementById('jobs-screen');
+        const profileScreen = document.getElementById('profile-screen');
+        
+        // Bottom nav items
+        const navItems = document.querySelectorAll('.nav-item');
+        
+        // Modals
+        const postJobModal = document.getElementById('post-job-modal');
+        const jobDetailsModal = document.getElementById('job-details-modal');
+        const userMenuModal = document.getElementById('user-menu-modal');
+        const closeModalButtons = document.querySelectorAll('.close-modal');
+        const postJobBtn = document.getElementById('post-job-btn');
+        const userMenuBtn = document.getElementById('user-menu-btn');
+        const switchRoleBtn = document.getElementById('switch-role-btn');
+        const logoutBtn = document.getElementById('logout-btn');
+        
+        // Initialize the app
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check if user is already logged in
+            auth.onAuthStateChanged(user => {
+                if (user) {
+                    currentUser = user;
+                    loadUserProfile();
+                } else {
+                    showAuthScreen();
+                }
+            });
+            
+            // Event listeners for authentication
+            workerBtn.addEventListener('click', () => selectRole('worker'));
+            contractorBtn.addEventListener('click', () => selectRole('contractor'));
+            
+            loginTab.addEventListener('click', () => switchAuthTab('login'));
+            registerTab.addEventListener('click', () => switchAuthTab('register'));
+            
+            loginForm.addEventListener('submit', handleLogin);
+            registerForm.addEventListener('submit', handleRegister);
+            
+            detectLocationBtn.addEventListener('click', detectLocation);
+            
+            // Skill selection
+            document.querySelectorAll('.skill-icon').forEach(icon => {
+                icon.addEventListener('click', function() {
+                    this.classList.toggle('selected');
+                    const skill = this.getAttribute('data-skill');
+                    
+                    if (this.classList.contains('selected')) {
+                        if (!selectedSkills.includes(skill)) {
+                            selectedSkills.push(skill);
+                        }
+                    } else {
+                        selectedSkills = selectedSkills.filter(s => s !== skill);
+                    }
+                });
+            });
+            
+            // Availability toggle
+            document.querySelectorAll('.toggle-option').forEach(option => {
+                option.addEventListener('click', function() {
+                    const parent = this.parentElement;
+                    parent.querySelectorAll('.toggle-option').forEach(child => {
+                        child.classList.remove('active');
+                    });
+                    this.classList.add('active');
+                    
+                    if (userProfile) {
+                        updateAvailability(this.textContent.includes('Available'));
+                    }
+                });
+            });
+            
+            // Bottom navigation
+            navItems.forEach(item => {
+                item.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    // Update active state
+                    navItems.forEach(nav => nav.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    // Show the selected screen
+                    const screen = this.getAttribute('data-screen');
+                    showScreen(screen);
+                });
+            });
+            
+            // Modal controls
+            postJobBtn?.addEventListener('click', () => {
+                postJobModal.classList.add('active');
+                initializeJobSkillsSelector();
+            });
+            
+            userMenuBtn.addEventListener('click', () => {
+                updateUserMenu();
+                userMenuModal.classList.add('active');
+            });
+            
+            switchRoleBtn.addEventListener('click', switchUserRole);
+            logoutBtn.addEventListener('click', handleLogout);
+            
+            closeModalButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    document.querySelectorAll('.modal').forEach(modal => {
+                        modal.classList.remove('active');
+                    });
+                });
+            });
+            
+            // Close modal when clicking outside
+            document.querySelectorAll('.modal').forEach(modal => {
+                modal.addEventListener('click', function(e) {
+                    if (e.target === this) {
+                        this.classList.remove('active');
+                    }
+                });
+            });
+            
+            // Post job form
+            document.getElementById('post-job-form')?.addEventListener('submit', handlePostJob);
+            
+            // Initialize with some sample data
+            initializeSampleData();
+        });
+        
+        // Functions
+        function selectRole(role) {
+            userRole = role;
+            roleSelection.classList.add('hidden');
+            authForms.classList.remove('hidden');
+            
+            // Show/hide skills section for workers only
+            const skillsGroup = document.getElementById('skills-group');
+            if (role === 'worker') {
+                skillsGroup.classList.remove('hidden');
+            } else {
+                skillsGroup.classList.add('hidden');
+            }
+        }
+        
+        function switchAuthTab(tab) {
+            if (tab === 'login') {
+                loginForm.classList.remove('hidden');
+                registerForm.classList.add('hidden');
+                loginTab.classList.add('active');
+                registerTab.classList.remove('active');
+            } else {
+                loginForm.classList.add('hidden');
+                registerForm.classList.remove('hidden');
+                loginTab.classList.remove('active');
+                registerTab.classList.add('active');
+            }
+        }
+        
+        function detectLocation() {
+            const locationInput = document.getElementById('register-location');
+            
+            // Simulate location detection
+            locationInput.value = "Mumbai, India";
+            
+            // In a real app, you would use the Geolocation API
+            // if (navigator.geolocation) {
+            //     navigator.geolocation.getCurrentPosition(position => {
+            //         // Reverse geocode to get location name
+            //         locationInput.value = "Detected location";
+            //     });
+            // }
+        }
+        
+        function handleLogin(e) {
+            e.preventDefault();
+            
+            const phone = document.getElementById('login-phone').value;
+            const password = document.getElementById('login-password').value;
+            
+            // For demo purposes, use a simple check
+            if (phone && password) {
+                // Simulate Firebase authentication
+                simulateFirebaseAuth(phone);
+            } else {
+                alert('Please enter phone and password');
+            }
+        }
+        
+        function handleRegister(e) {
+            e.preventDefault();
+            
+            const name = document.getElementById('register-name').value;
+            const phone = document.getElementById('register-phone').value;
+            const password = document.getElementById('register-password').value;
+            const location = document.getElementById('register-location').value;
+            
+            if (password.length < 6) {
+                alert('Password must be at least 6 characters');
+                return;
+            }
+            
+            if (userRole === 'worker' && selectedSkills.length === 0) {
+                alert('Please select at least one skill');
+                return;
+            }
+            
+            // For demo purposes
+            simulateFirebaseRegistration(name, phone, location);
+        }
+        
+        function simulateFirebaseAuth(phone) {
+            // Show loading
+            const loginBtn = loginForm.querySelector('.btn');
+            const originalText = loginBtn.textContent;
+            loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Logging in...';
+            loginBtn.disabled = true;
+            
+            // Simulate API call delay
+            setTimeout(() => {
+                // Create a mock user
+                currentUser = {
+                    uid: 'user_' + Date.now(),
+                    phoneNumber: phone,
+                    displayName: phone === '1234567890' ? 'John Worker' : 'Jane Contractor'
+                };
+                
+                // Load user profile
+                loadMockProfile();
+                
+                // Show app
+                showApp();
+                
+                // Reset button
+                loginBtn.textContent = originalText;
+                loginBtn.disabled = false;
+            }, 1500);
+        }
+        
+        function simulateFirebaseRegistration(name, phone, location) {
+            // Show loading
+            const registerBtn = registerForm.querySelector('.btn');
+            const originalText = registerBtn.textContent;
+            registerBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating account...';
+            registerBtn.disabled = true;
+            
+            // Simulate API call delay
+            setTimeout(() => {
+                // Create a mock user
+                currentUser = {
+                    uid: 'user_' + Date.now(),
+                    phoneNumber: phone,
+                    displayName: name
+                };
+                
+                // Create profile
+                userProfile = {
+                    uid: currentUser.uid,
+                    name: name,
+                    phone: phone,
+                    role: userRole,
+                    location: location,
+                    skills: userRole === 'worker' ? selectedSkills : [],
+                    availability: userRole === 'worker',
+                    createdAt: new Date().toISOString()
+                };
+                
+                // Show app
+                showApp();
+                
+                // Reset button
+                registerBtn.textContent = originalText;
+                registerBtn.disabled = false;
+            }, 1500);
+        }
+        
+        function loadUserProfile() {
+            // In a real app, load from Firestore
+            // For demo, use mock data
+            loadMockProfile();
+            showApp();
+        }
+        
+        function loadMockProfile() {
+            userProfile = {
+                uid: currentUser.uid,
+                name: currentUser.displayName || 'John Smith',
+                phone: currentUser.phoneNumber || '1234567890',
+                role: userRole,
+                location: 'Mumbai, India',
+                skills: userRole === 'worker' ? ['mason', 'helper'] : [],
+                availability: true,
+                rating: 4.5,
+                totalJobs: 12,
+                weeklyEarnings: 4200,
+                totalEarnings: 24500
+            };
+        }
+        
+        function showAuthScreen() {
+            authScreen.classList.remove('hidden');
+            appContainer.classList.add('hidden');
+            
+            // Reset forms
+            loginForm.reset();
+            registerForm.reset();
+            roleSelection.classList.remove('hidden');
+            authForms.classList.add('hidden');
+            selectedSkills = [];
+            document.querySelectorAll('.skill-icon').forEach(icon => {
+                icon.classList.remove('selected');
+            });
+        }
+        
+        function showApp() {
+            authScreen.classList.add('hidden');
+            appContainer.classList.remove('hidden');
+            
+            // Update UI based on user role
+            updateUIForRole();
+            
+            // Show dashboard by default
+            showScreen('dashboard');
+            
+            // Update user avatar
+            updateUserAvatar();
+        }
+        
+        function updateUIForRole() {
+            if (userRole === 'worker') {
+                workerDashboard.classList.remove('hidden');
+                contractorDashboard.classList.add('hidden');
+                
+                // Update stats
+                document.getElementById('jobs-today').textContent = '1';
+                document.getElementById('earnings-week').textContent = `₹${userProfile.weeklyEarnings}`;
+                document.getElementById('total-jobs').textContent = userProfile.totalJobs;
+                document.getElementById('rating').textContent = userProfile.rating;
+                
+                // Set availability toggle
+                const availableToggle = document.getElementById('available-toggle');
+                const unavailableToggle = document.getElementById('unavailable-toggle');
+                
+                if (userProfile.availability) {
+                    availableToggle.classList.add('active');
+                    unavailableToggle.classList.remove('active');
+                } else {
+                    availableToggle.classList.remove('active');
+                    unavailableToggle.classList.add('active');
+                }
+            } else {
+                workerDashboard.classList.add('hidden');
+                contractorDashboard.classList.remove('hidden');
+                
+                // Update stats
+                document.getElementById('active-jobs').textContent = '3';
+                document.getElementById('hired-workers').textContent = '5';
+                document.getElementById('total-spent').textContent = '₹12,400';
+                document.getElementById('avg-rating').textContent = '4.2';
+            }
+            
+            // Update profile screen
+            updateProfileScreen();
+        }
+        
+        function showScreen(screen) {
+            // Hide all screens
+            workerDashboard.classList.add('hidden');
+            contractorDashboard.classList.add('hidden');
+            jobsScreen.classList.add('hidden');
+            profileScreen.classList.add('hidden');
+            
+            // Show the requested screen
+            if (screen === 'dashboard') {
+                if (userRole === 'worker') {
+                    workerDashboard.classList.remove('hidden');
+                } else {
+                    contractorDashboard.classList.remove('hidden');
+                }
+            } else if (screen === 'jobs') {
+                jobsScreen.classList.remove('hidden');
+                loadJobListings();
+            } else if (screen === 'profile') {
+                profileScreen.classList.remove('hidden');
+                updateProfileScreen();
+            }
+        }
+        
+        function updateUserAvatar() {
+            const avatar = document.getElementById('user-menu-btn');
+            const name = userProfile.name;
+            const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+            avatar.textContent = initials;
+        }
+        
+        function updateProfileScreen() {
+            document.getElementById('profile-name').textContent = userProfile.name;
+            document.getElementById('profile-role').textContent = userRole === 'worker' ? 'Construction Worker' : 'Contractor';
+            document.getElementById('profile-location').innerHTML = `<i class="fas fa-map-marker-alt"></i> ${userProfile.location}`;
+            
+            // Update skills
+            const skillsContainer = document.getElementById('profile-skills');
+            skillsContainer.innerHTML = '';
+            
+            if (userRole === 'worker' && userProfile.skills) {
+                const skillNames = {
+                    'mason': {icon: 'fas fa-brick', label: 'Mason'},
+                    'carpenter': {icon: 'fas fa-hammer', label: 'Carpenter'},
+                    'electrician': {icon: 'fas fa-bolt', label: 'Electrician'},
+                    'plumber': {icon: 'fas fa-wrench', label: 'Plumber'},
+                    'helper': {icon: 'fas fa-people-carry', label: 'Helper'},
+                    'painter': {icon: 'fas fa-paint-roller', label: 'Painter'}
+                };
+                
+                userProfile.skills.forEach(skill => {
+                    if (skillNames[skill]) {
+                        const skillEl = document.createElement('div');
+                        skillEl.className = 'skill-icon selected';
+                        skillEl.innerHTML = `
+                            <i class="${skillNames[skill].icon}"></i>
+                            <span>${skillNames[skill].label}</span>
+                        `;
+                        skillsContainer.appendChild(skillEl);
+                    }
+                });
+            }
+            
+            // Update attendance
+            const attendanceGrid = document.getElementById('attendance-grid');
+            attendanceGrid.innerHTML = '';
+            
+            const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+            const attendance = ['present', 'present', 'present', 'absent', 'present', 'present', null];
+            
+            days.forEach((day, index) => {
+                const dayEl = document.createElement('div');
+                dayEl.className = 'attendance-day';
+                dayEl.innerHTML = `<div>${day}</div>`;
+                
+                if (attendance[index] === 'present') {
+                    dayEl.classList.add('present');
+                    dayEl.innerHTML += '<div><i class="fas fa-check"></i></div>';
+                } else if (attendance[index] === 'absent') {
+                    dayEl.classList.add('absent');
+                    dayEl.innerHTML += '<div><i class="fas fa-times"></i></div>';
+                } else {
+                    dayEl.innerHTML += '<div>-</div>';
+                }
+                
+                attendanceGrid.appendChild(dayEl);
+            });
+        }
+        
+        function updateUserMenu() {
+            document.getElementById('menu-user-name').textContent = userProfile.name;
+            document.getElementById('menu-user-role').textContent = userRole === 'worker' ? 'Worker' : 'Contractor';
+        }
+        
+        function switchUserRole() {
+            userRole = userRole === 'worker' ? 'contractor' : 'worker';
+            
+            // Close modal
+            userMenuModal.classList.remove('active');
+            
+            // Update UI
+            updateUIForRole();
+            
+            // Update bottom nav to show dashboard
+            navItems.forEach(nav => nav.classList.remove('active'));
+            navItems[0].classList.add('active');
+            
+            showScreen('dashboard');
+        }
+        
+        function handleLogout() {
+            // In a real app, sign out from Firebase
+            // auth.signOut();
+            
+            currentUser = null;
+            userProfile = null;
+            showAuthScreen();
+        }
+        
+        function updateAvailability(isAvailable) {
+            userProfile.availability = isAvailable;
+            // In a real app, update in Firestore
+        }
+        
+        function initializeJobSkillsSelector() {
+            const container = document.getElementById('job-skills-selector');
+            if (!container) return;
+            
+            const skills = [
+                {id: 'mason', icon: 'fas fa-brick', label: 'Mason'},
+                {id: 'carpenter', icon: 'fas fa-hammer', label: 'Carpenter'},
+                {id: 'electrician', icon: 'fas fa-bolt', label: 'Electrician'},
+                {id: 'plumber', icon: 'fas fa-wrench', label: 'Plumber'},
+                {id: 'helper', icon: 'fas fa-people-carry', label: 'Helper'},
+                {id: 'painter', icon: 'fas fa-paint-roller', label: 'Painter'}
+            ];
+            
+            container.innerHTML = '';
+            
+            skills.forEach(skill => {
+                const skillEl = document.createElement('div');
+                skillEl.className = 'skill-icon';
+                skillEl.setAttribute('data-skill', skill.id);
+                skillEl.innerHTML = `
+                    <i class="${skill.icon}"></i>
+                    <span>${skill.label}</span>
+                `;
+                
+                skillEl.addEventListener('click', function() {
+                    this.classList.toggle('selected');
+                });
+                
+                container.appendChild(skillEl);
+            });
+        }
+        
+        function handlePostJob(e) {
+            e.preventDefault();
+            
+            const title = document.getElementById('job-title').value;
+            const workersNeeded = document.getElementById('workers-needed').value;
+            const shiftStart = document.getElementById('shift-start').value;
+            const shiftEnd = document.getElementById('shift-end').value;
+            const duration = document.getElementById('job-duration').value;
+            const wage = document.getElementById('daily-wage').value;
+            const location = document.getElementById('job-location').value;
+            
+            // Get selected skills
+            const selectedJobSkills = [];
+            document.querySelectorAll('#job-skills-selector .skill-icon.selected').forEach(icon => {
+                selectedJobSkills.push(icon.getAttribute('data-skill'));
+            });
+            
+            if (selectedJobSkills.length === 0) {
+                alert('Please select at least one required skill');
+                return;
+            }
+            
+            // Create job object
+            const job = {
+                id: 'job_' + Date.now(),
+                title: title,
+                contractorId: currentUser.uid,
+                contractorName: userProfile.name,
+                skills: selectedJobSkills,
+                workersNeeded: parseInt(workersNeeded),
+                shiftStart: shiftStart,
+                shiftEnd: shiftEnd,
+                duration: parseInt(duration),
+                dailyWage: parseInt(wage),
+                location: location,
+                postedAt: new Date().toISOString(),
+                status: 'open'
+            };
+            
+            // In a real app, save to Firestore
+            console.log('Job posted:', job);
+            
+            // Close modal and reset form
+            postJobModal.classList.remove('active');
+            e.target.reset();
+            
+            // Show success message
+            alert('Job posted successfully! Workers will be notified.');
+        }
+        
+        function loadJobListings() {
+            const container = document.getElementById('all-job-list');
+            if (!container) return;
+            
+            // Clear existing content
+            container.innerHTML = '';
+            
+            // Add sample job listings
+            const sampleJobs = [
+                {
+                    id: 'job1',
+                    title: 'Mason needed for residential building',
+                    contractorName: 'Sharma Constructions',
+                    skills: ['mason'],
+                    workersNeeded: 3,
+                    shiftStart: '08:00',
+                    shiftEnd: '17:00',
+                    duration: 10,
+                    dailyWage: 850,
+                    location: 'Andheri East, Mumbai',
+                    distance: '2.5 km',
+                    postedAt: '2023-10-15',
+                    status: 'open'
+                },
+                {
+                    id: 'job2',
+                    title: 'Carpenter for furniture work',
+                    contractorName: 'Woodcraft Interiors',
+                    skills: ['carpenter'],
+                    workersNeeded: 2,
+                    shiftStart: '09:00',
+                    shiftEnd: '18:00',
+                    duration: 5,
+                    dailyWage: 900,
+                    location: 'Bandra West, Mumbai',
+                    distance: '4.1 km',
+                    postedAt: '2023-10-16',
+                    status: 'open'
+                },
+                {
+                    id: 'job3',
+                    title: 'Electrician and Helper for wiring',
+                    contractorName: 'Spark Electricals',
+                    skills: ['electrician', 'helper'],
+                    workersNeeded: 4,
+                    shiftStart: '10:00',
+                    shiftEnd: '19:00',
+                    duration: 7,
+                    dailyWage: 750,
+                    location: 'Ghatkopar, Mumbai',
+                    distance: '5.3 km',
+                    postedAt: '2023-10-14',
+                    status: 'open'
+                }
+            ];
+            
+            sampleJobs.forEach(job => {
+                const jobCard = document.createElement('div');
+                jobCard.className = 'job-card card';
+                
+                // Format skills
+                const skillNames = {
+                    'mason': 'Mason',
+                    'carpenter': 'Carpenter',
+                    'electrician': 'Electrician',
+                    'plumber': 'Plumber',
+                    'helper': 'Helper',
+                    'painter': 'Painter'
+                };
+                
+                const skillsText = job.skills.map(skill => skillNames[skill]).join(', ');
+                
+                jobCard.innerHTML = `
+                    <h3>${job.title}</h3>
+                    <p><strong>By:</strong> ${job.contractorName}</p>
+                    <div class="job-meta">
+                        <span><i class="fas fa-map-marker-alt"></i> ${job.distance} away</span>
+                        <span><i class="fas fa-clock"></i> ${job.shiftStart} - ${job.shiftEnd}</span>
+                        <span><i class="fas fa-calendar"></i> ${job.duration} days</span>
+                    </div>
+                    <p><strong>Skills:</strong> ${skillsText}</p>
+                    <div class="wage-badge">₹${job.dailyWage}/day</div>
+                    <button class="btn btn-small mt-20" data-job-id="${job.id}">
+                        ${userRole === 'worker' ? 'Apply Now' : 'View Details'}
+                    </button>
+                `;
+                
+                container.appendChild(jobCard);
+            });
+            
+            // Add event listeners to job buttons
+            container.querySelectorAll('button').forEach(button => {
+                button.addEventListener('click', function() {
+                    const jobId = this.getAttribute('data-job-id');
+                    if (userRole === 'worker') {
+                        applyForJob(jobId);
+                    } else {
+                        viewJobDetails(jobId);
+                    }
+                });
+            });
+        }
+        
+        function applyForJob(jobId) {
+            alert(`Applied for job ${jobId}! The contractor will contact you soon.`);
+        }
+        
+        function viewJobDetails(jobId) {
+            // In a real app, fetch job details from Firestore
+            const jobDetails = {
+                title: 'Mason needed for residential building',
+                description: 'We need experienced masons for a residential building project in Andheri. Work includes brick laying, plastering, and finishing.',
+                contractorName: 'Sharma Constructions',
+                contact: '9876543210',
+                location: 'Andheri East, Mumbai',
+                duration: '10 days',
+                shift: '8:00 AM - 5:00 PM',
+                wage: '₹850 per day',
+                requirements: 'Minimum 2 years experience, own tools preferred'
+            };
+            
+            document.getElementById('modal-job-title').textContent = jobDetails.title;
+            
+            const content = document.getElementById('modal-job-content');
+            content.innerHTML = `
+                <p>${jobDetails.description}</p>
+                <div class="job-meta">
+                    <span><i class="fas fa-user-tie"></i> ${jobDetails.contractorName}</span>
+                    <span><i class="fas fa-phone"></i> ${jobDetails.contact}</span>
+                    <span><i class="fas fa-map-marker-alt"></i> ${jobDetails.location}</span>
+                </div>
+                <div class="job-meta">
+                    <span><i class="fas fa-calendar"></i> ${jobDetails.duration}</span>
+                    <span><i class="fas fa-clock"></i> ${jobDetails.shift}</span>
+                </div>
+                <div class="wage-badge">${jobDetails.wage}</div>
+                <p><strong>Requirements:</strong> ${jobDetails.requirements}</p>
+                <button class="btn mt-20">Contact Worker</button>
+            `;
+            
+            jobDetailsModal.classList.add('active');
+        }
+        
+        function initializeSampleData() {
+            // Initialize with some sample skills selected for registration
+            setTimeout(() => {
+                const masonSkill = document.querySelector('.skill-icon[data-skill="mason"]');
+                const helperSkill = document.querySelector('.skill-icon[data-skill="helper"]');
+                
+                if (masonSkill && helperSkill) {
+                    masonSkill.classList.add('selected');
+                    helperSkill.classList.add('selected');
+                    selectedSkills = ['mason', 'helper'];
+                }
+            }, 100);
+        }
+    </script>
+</body>
+</html>
